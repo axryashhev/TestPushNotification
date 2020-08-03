@@ -1,47 +1,63 @@
-import React, {Component} from 'react';
+import React, {useEffect} from 'react';
+import {View, StyleSheet, Text, Button} from 'react-native';
+import {fcmService} from './src/FCMService';
+import {localNotificationService} from './src/LocalNotificationService';
 
-import {StyleSheet, Text, View, Button} from 'react-native';
+export default function App() {
+  useEffect(() => {
+    fcmService.registerAppWithFCM().then((r) => {
+      fcmService.register(onRegister, onNotification, onOpenNotification);
+      localNotificationService.configure(onOpenNotification);
+    });
 
-export default class App extends Component {
-  constructor(props) {
-    super(props);
+    function onRegister(token) {
+      console.log('[App] onRegister: ', token);
+    }
 
-    this.state = {
-      seconds: 0,
+    function onNotification(notify) {
+      console.log('[App] onNotification: ', notify);
+      const options = {
+        soundName: 'default',
+        playSound: true, //,
+        // largeIcon: 'ic_launcher', // add icon large for Android (Link: app/src/main/mipmap)
+        // smallIcon: 'ic_launcher' // add icon small for Android (Link: app/src/main/mipmap)
+      };
+      localNotificationService.showNotification(
+        0,
+        notify.title,
+        notify.body,
+        notify,
+        options,
+      );
+    }
+
+    function onOpenNotification(notify) {
+      console.log('[App] onOpenNotification: ', notify);
+      alert('Open Notification: ' + notify.body);
+    }
+
+    return () => {
+      console.log('[App] unRegister');
+      fcmService.unRegister();
+      localNotificationService.unregister();
     };
-  }
+  }, []);
 
-  render() {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>Push Notification</Text>
-        <View style={styles.Button}>
-          <Button
-            onPress={() => {}}
-            title="Show Notification"
-            style={styles.Button}
-            color="#841584"
-            accessibilityLabel="Show Notification"
-          />
-        </View>
-      </View>
-    );
-  }
+  return (
+    <View style={styles.container}>
+      <Text>This is test</Text>
+      <Button
+        title="Press me"
+        onPress={() => localNotificationService.cancelAllLocalNotifications()}
+      />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'red',
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  Button: {
-    margin: 10,
+    justifyContent: 'center',
   },
 });
